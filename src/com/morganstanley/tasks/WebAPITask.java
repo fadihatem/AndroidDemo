@@ -1,11 +1,22 @@
 package com.morganstanley.tasks;
 
+import java.io.IOException;
+
+import javax.xml.parsers.DocumentBuilder;
+import javax.xml.parsers.DocumentBuilderFactory;
+import javax.xml.parsers.ParserConfigurationException;
+
 import org.json.JSONException;
 import org.json.JSONObject;
+import org.w3c.dom.Element;
+import org.w3c.dom.Node;
+import org.w3c.dom.NodeList;
+import org.xml.sax.SAXException;
 
 import android.app.ProgressDialog;
 import android.content.Context;
 import android.os.AsyncTask;
+import android.provider.DocumentsContract.Document;
 import android.support.v4.app.Fragment;
 import android.util.Log;
 import android.widget.Toast;
@@ -63,13 +74,38 @@ public class WebAPITask extends AsyncTask<String, Integer, String>
         }
         
         try {
-			JSONObject respObj = new JSONObject(result);
-			JSONObject currWeather = respObj.getJSONObject("CurrentWeather");	
-			String temperature = currWeather.getString("Temperature");
-			String wind = currWeather.getString("Wind");
-			weather=new Weather(temperature,wind);
+        	DocumentBuilderFactory dbFactory = DocumentBuilderFactory.newInstance();
+        	DocumentBuilder dBuilder = dbFactory.newDocumentBuilder();
+        	org.w3c.dom.Document doc = dBuilder.parse(result);
+        			
+        	//optional, but recommended
+        	//read this - http://stackoverflow.com/questions/13786607/normalization-in-dom-parsing-with-java-how-does-it-work
+        	doc.getDocumentElement().normalize();
+
+        	System.out.println("Root element :" + doc.getDocumentElement().getNodeName());
+        			
+        	NodeList nList = doc.getElementsByTagName("CurrentWeather");
+
+        	for (int temp = 0; temp < nList.getLength(); temp++) {
+
+        		Node nNode = nList.item(temp);
+        				
+        		if (nNode.getNodeType() == Node.ELEMENT_NODE) {
+
+        			Element eElement = (Element) nNode;
+        			String temperature =  eElement.getElementsByTagName("Temperature").item(0).getTextContent();
+        			String wind = eElement.getElementsByTagName("Wind").item(0).getTextContent();
+        			weather=new Weather(temperature,wind);
+        		}
+        	}
 			
-		} catch (JSONException e) {
+		} catch (ParserConfigurationException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		} catch (SAXException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		} catch (IOException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
