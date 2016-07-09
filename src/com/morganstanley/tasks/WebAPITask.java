@@ -6,18 +6,13 @@ import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.parsers.ParserConfigurationException;
 
-import org.json.JSONException;
-import org.json.JSONObject;
 import org.w3c.dom.Element;
 import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
 import org.xml.sax.SAXException;
 
 import android.app.ProgressDialog;
-import android.content.Context;
 import android.os.AsyncTask;
-import android.provider.DocumentsContract.Document;
-import android.support.v4.app.Fragment;
 import android.util.Log;
 import android.widget.Toast;
 
@@ -66,7 +61,6 @@ public class WebAPITask extends AsyncTask<String, Integer, String>
     {
     	
     	Weather weather = new Weather("","");
-    	
     	progDialog.dismiss();
         if (result.length() == 0) {
             Toast.makeText(this.activity.getContext(),"Unable to find track data. Try again later.",Toast.LENGTH_SHORT).show();

@@ -25,9 +25,9 @@ public class DummyContent {
 
 	static {
 		// Add 3 sample items.
-		addItem(new DummyItem("New York", "New York"));
-		addItem(new DummyItem("Denver", "Denver"));
-		addItem(new DummyItem("Chicago", "Chicago"));
+		addItem(new DummyItem("Montreal", "Montreal"));
+		addItem(new DummyItem("Vancouver", "Vancouver"));
+		addItem(new DummyItem("Toronto", "Toronto"));
 	}
 
 	private static void addItem(DummyItem item) {

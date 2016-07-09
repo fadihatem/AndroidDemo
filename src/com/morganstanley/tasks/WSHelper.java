@@ -1,19 +1,25 @@
 package com.morganstanley.tasks;
 
 import java.io.ByteArrayOutputStream;
+import java.io.IOException;
 import java.io.InputStream;
-import java.util.ArrayList;
-import java.util.List;
+
+import javax.xml.parsers.DocumentBuilder;
+import javax.xml.parsers.DocumentBuilderFactory;
+import javax.xml.parsers.ParserConfigurationException;
 
 import org.apache.http.HttpEntity;
 import org.apache.http.HttpResponse;
-import org.apache.http.NameValuePair;
 import org.apache.http.StatusLine;
 import org.apache.http.client.HttpClient;
-import org.apache.http.client.entity.UrlEncodedFormEntity;
-import org.apache.http.client.methods.HttpPost;
+import org.apache.http.client.methods.HttpGet;
 import org.apache.http.impl.client.DefaultHttpClient;
-import org.apache.http.message.BasicNameValuePair;
+import org.w3c.dom.Element;
+import org.w3c.dom.Node;
+import org.w3c.dom.NodeList;
+import org.xml.sax.SAXException;
+
+import com.morganstanley.data.Weather;
 
 import android.util.Log;
 
@@ -26,7 +32,7 @@ import android.util.Log;
 public class WSHelper {
 
 	private static final String weatherURL = 
-		"http://www.webservicex.net/globalweather.asmx/GetWeather"; 
+		"http://www.webservicex.net/globalweather.asmx/GetWeather?CityName="; 
 	private static final int HTTP_STATUS_OK = 200;
 	private static byte[] buff = new byte[1024];
 	private static final String logTag = WSHelper.class.getName();
@@ -55,21 +61,20 @@ public class WSHelper {
 	throws ApiException
 	{
 		String retval = null;
-		String metro = params[0];  
+		String metro = params[0]; 
 
-		Log.d(logTag,"Fetching " + weatherURL);
+
+		String url = weatherURL 
+		+ metro +"&CountryName=Canada"; 
+
+		Log.d(logTag,"Fetching " + url);
 		
 		// create an http client and a request object.
 		HttpClient client = new DefaultHttpClient();
-		HttpPost request = new HttpPost(weatherURL);
+		HttpGet request = new HttpGet(url);
 
 		try {
 
-			List<NameValuePair> urlParameters = new ArrayList<NameValuePair>();
-			urlParameters.add(new BasicNameValuePair("CityName", metro));
-			urlParameters.add(new BasicNameValuePair("CountryName", "USA"));
-
-			request.setEntity(new UrlEncodedFormEntity(urlParameters));
 			// execute the request
 			HttpResponse response = client.execute(request);
 			StatusLine status = response.getStatusLine();
@@ -82,13 +87,36 @@ public class WSHelper {
 			// process the content. 
 			HttpEntity entity = response.getEntity();
 			InputStream ist = entity.getContent();
-			ByteArrayOutputStream content = new ByteArrayOutputStream();
+			try {
+	        	DocumentBuilderFactory dbFactory = DocumentBuilderFactory.newInstance();
+	        	DocumentBuilder dBuilder = dbFactory.newDocumentBuilder();
+	        	org.w3c.dom.Document doc = dBuilder.parse(ist);
+	        			
+	        	//optional, but recommended
+	        	//read this - http://stackoverflow.com/questions/13786607/normalization-in-dom-parsing-with-java-how-does-it-work
+	        	doc.getDocumentElement().normalize();
 
-			int readCount = 0;
-			while ((readCount = ist.read(buff)) != -1) {
-				content.write(buff, 0, readCount);
+	        	Node nNodeFirst= doc.getElementsByTagName("CurrentWeather").item(0);
+	        				
+        		if (nNodeFirst.getNodeType() == Node.ELEMENT_NODE) {
+
+        			Element eElement = (Element) nNodeFirst;
+        			String temperature =  eElement.getElementsByTagName("Temperature").item(0).getTextContent();
+        			String wind = eElement.getElementsByTagName("Wind").item(0).getTextContent();
+        			Weather weather=new Weather(temperature,wind);
+        			retval="Temperature = "+weather.getTemperature()+"\nWind is "+weather.getWind();
+        		}
+				
+			} catch (ParserConfigurationException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			} catch (SAXException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			} catch (IOException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
 			}
-			retval = new String (content.toByteArray());
 
 		} catch (Exception e) {
 			throw new ApiException("Problem connecting to the server " + 
